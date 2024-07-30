@@ -485,10 +485,10 @@ void R_InitTextures (void)
     
     // Load the patch names from pnames.lmp.
     name[8] = 0;
-    names = W_CacheLumpName (DEH_String("PNAMES"), PU_STATIC);
-    nummappatches = LONG ( *((int *)names) );
+    names = W_CacheLumpName(DEH_String("PNAMES"), PU_STATIC);
+    nummappatches = *((int *)names);
     name_p = names + 4;
-    patchlookup = Z_Malloc(nummappatches*sizeof(*patchlookup), PU_STATIC, NULL);
+    patchlookup = Z_Malloc(nummappatches * sizeof(*patchlookup), PU_STATIC, NULL);
 
     for (i = 0; i < nummappatches; i++)
     {
@@ -500,39 +500,39 @@ void R_InitTextures (void)
     // Load the map texture definitions from textures.lmp.
     // The data is contained in one or two lumps,
     //  TEXTURE1 for shareware, plus TEXTURE2 for commercial.
-    maptex = maptex1 = W_CacheLumpName (DEH_String("TEXTURE1"), PU_STATIC);
-    numtextures1 = LONG(*maptex);
-    maxoff = W_LumpLength (W_GetNumForName (DEH_String("TEXTURE1")));
+    maptex = maptex1 = W_CacheLumpName(DEH_String("TEXTURE1"), PU_STATIC);
+    numtextures1 = *maptex;
+    maxoff = W_LumpLength(W_GetNumForName(DEH_String("TEXTURE1")));
     directory = maptex+1;
 	
-    if (W_CheckNumForName (DEH_String("TEXTURE2")) != -1)
+    if (W_CheckNumForName(DEH_String("TEXTURE2")) != -1)
     {
-	maptex2 = W_CacheLumpName (DEH_String("TEXTURE2"), PU_STATIC);
-	numtextures2 = LONG(*maptex2);
-	maxoff2 = W_LumpLength (W_GetNumForName (DEH_String("TEXTURE2")));
+        maptex2 = W_CacheLumpName(DEH_String("TEXTURE2"), PU_STATIC);
+        numtextures2 = *maptex2;
+        maxoff2 = W_LumpLength(W_GetNumForName(DEH_String("TEXTURE2")));
     }
     else
     {
-	maptex2 = NULL;
-	numtextures2 = 0;
-	maxoff2 = 0;
+        maptex2 = NULL;
+        numtextures2 = 0;
+        maxoff2 = 0;
     }
     numtextures = numtextures1 + numtextures2;
 	
-    textures = Z_Malloc (numtextures * sizeof(*textures), PU_STATIC, 0);
-    texturecolumnlump = Z_Malloc (numtextures * sizeof(*texturecolumnlump), PU_STATIC, 0);
-    texturecolumnofs = Z_Malloc (numtextures * sizeof(*texturecolumnofs), PU_STATIC, 0);
-    texturecomposite = Z_Malloc (numtextures * sizeof(*texturecomposite), PU_STATIC, 0);
-    texturecompositesize = Z_Malloc (numtextures * sizeof(*texturecompositesize), PU_STATIC, 0);
-    texturewidthmask = Z_Malloc (numtextures * sizeof(*texturewidthmask), PU_STATIC, 0);
-    textureheight = Z_Malloc (numtextures * sizeof(*textureheight), PU_STATIC, 0);
+    textures = Z_Malloc(numtextures * sizeof(*textures), PU_STATIC, 0);
+    texturecolumnlump = Z_Malloc(numtextures * sizeof(*texturecolumnlump), PU_STATIC, 0);
+    texturecolumnofs = Z_Malloc(numtextures * sizeof(*texturecolumnofs), PU_STATIC, 0);
+    texturecomposite = Z_Malloc(numtextures * sizeof(*texturecomposite), PU_STATIC, 0);
+    texturecompositesize = Z_Malloc(numtextures * sizeof(*texturecompositesize), PU_STATIC, 0);
+    texturewidthmask = Z_Malloc(numtextures * sizeof(*texturewidthmask), PU_STATIC, 0);
+    textureheight = Z_Malloc(numtextures * sizeof(*textureheight), PU_STATIC, 0);
 
     totalwidth = 0;
     
     //	Really complex printing shit...
-    temp1 = W_GetNumForName (DEH_String("S_START"));  // P_???????
-    temp2 = W_GetNumForName (DEH_String("S_END")) - 1;
-    temp3 = ((temp2-temp1+63)/64) + ((numtextures+63)/64);
+    temp1 = W_GetNumForName(DEH_String("S_START"));  // P_???????
+    temp2 = W_GetNumForName(DEH_String("S_END")) - 1;
+    temp3 = ((temp2 - temp1 + 63) / 64) + ((numtextures + 63) / 64);
 
     // If stdout is a real console, use the classic vanilla "filling
     // up the box" effect, which uses backspace to "step back" inside
@@ -548,61 +548,58 @@ void R_InitTextures (void)
             printf("\b");
     }
 	
-    for (i=0 ; i<numtextures ; i++, directory++)
+    for (i = 0; i < numtextures; i++, directory++)
     {
-	if (!(i&63))
-	    printf (".");
+        if (!(i & 63))
+            printf (".");
 
-	if (i == numtextures1)
-	{
-	    // Start looking in second texture file.
-	    maptex = maptex2;
-	    maxoff = maxoff2;
-	    directory = maptex+1;
-	}
-		
-	offset = LONG(*directory);
+        if (i == numtextures1)
+        {
+            // Start looking in second texture file.
+            maptex = maptex2;
+            maxoff = maxoff2;
+            directory = maptex+1;
+        }
+            
+        offset = *directory;
 
-	if (offset > maxoff)
-	    I_Error ("R_InitTextures: bad texture directory");
-	
-	mtexture = (maptexture_t *) ( (byte *)maptex + offset);
+        if (offset > maxoff)
+            I_Error("R_InitTextures: bad texture directory");
+        
+        mtexture = (maptexture_t *)((byte *)maptex + offset);
 
-	texture = textures[i] =
-	    Z_Malloc (sizeof(texture_t)
-		      + sizeof(texpatch_t)*(SHORT(mtexture->patchcount)-1),
-		      PU_STATIC, 0);
-	
-	texture->width = SHORT(mtexture->width);
-	texture->height = SHORT(mtexture->height);
-	texture->patchcount = SHORT(mtexture->patchcount);
-	
-	memcpy (texture->name, mtexture->name, sizeof(texture->name));
-	mpatch = &mtexture->patches[0];
-	patch = &texture->patches[0];
+        texture = textures[i] = Z_Malloc(sizeof(texture_t) + sizeof(texpatch_t) * (SHORT(mtexture->patchcount)-1), PU_STATIC, 0);
+        
+        texture->width = SHORT(mtexture->width);
+        texture->height = SHORT(mtexture->height);
+        texture->patchcount = SHORT(mtexture->patchcount);
+        
+        memcpy (texture->name, mtexture->name, sizeof(texture->name));
+        mpatch = &mtexture->patches[0];
+        patch = &texture->patches[0];
 
-	for (j=0 ; j<texture->patchcount ; j++, mpatch++, patch++)
-	{
-	    patch->originx = SHORT(mpatch->originx);
-	    patch->originy = SHORT(mpatch->originy);
-	    patch->patch = patchlookup[SHORT(mpatch->patch)];
-	    if (patch->patch == -1)
-	    {
-		I_Error ("R_InitTextures: Missing patch in texture %s",
-			 texture->name);
-	    }
-	}		
-	texturecolumnlump[i] = Z_Malloc (texture->width*sizeof(**texturecolumnlump), PU_STATIC,0);
-	texturecolumnofs[i] = Z_Malloc (texture->width*sizeof(**texturecolumnofs), PU_STATIC,0);
+        for (j = 0; j < texture->patchcount; j++, mpatch++, patch++)
+        {
+            patch->originx = SHORT(mpatch->originx);
+            patch->originy = SHORT(mpatch->originy);
+            patch->patch = patchlookup[SHORT(mpatch->patch)];
+            if (patch->patch == -1)
+            {
+                I_Error("R_InitTextures: Missing patch in texture %s",
+                    texture->name);
+            }
+        }		
+        texturecolumnlump[i] = Z_Malloc(texture->width * sizeof(**texturecolumnlump), PU_STATIC,0);
+        texturecolumnofs[i] = Z_Malloc(texture->width * sizeof(**texturecolumnofs), PU_STATIC,0);
 
-	j = 1;
-	while (j*2 <= texture->width)
-	    j<<=1;
+        j = 1;
+        while (j*2 <= texture->width)
+            j<<=1;
 
-	texturewidthmask[i] = j-1;
-	textureheight[i] = texture->height<<FRACBITS;
-		
-	totalwidth += texture->width;
+        texturewidthmask[i] = j - 1;
+        textureheight[i] = texture->height << FRACBITS;
+            
+        totalwidth += texture->width;
     }
 
     Z_Free(patchlookup);
@@ -613,14 +610,14 @@ void R_InitTextures (void)
     
     // Precalculate whatever possible.	
 
-    for (i=0 ; i<numtextures ; i++)
-	R_GenerateLookup (i);
+    for (i = 0; i < numtextures; i++)
+	    R_GenerateLookup(i);
     
     // Create translation table for global animation.
-    texturetranslation = Z_Malloc ((numtextures+1)*sizeof(*texturetranslation), PU_STATIC, 0);
+    texturetranslation = Z_Malloc((numtextures + 1) * sizeof(*texturetranslation), PU_STATIC, 0);
     
-    for (i=0 ; i<numtextures ; i++)
-	texturetranslation[i] = i;
+    for (i = 0; i < numtextures; i++)
+	    texturetranslation[i] = i;
 
     GenerateTextureHashTable();
 }
@@ -634,15 +631,15 @@ void R_InitFlats (void)
 {
     int		i;
 	
-    firstflat = W_GetNumForName (DEH_String("F_START")) + 1;
-    lastflat = W_GetNumForName (DEH_String("F_END")) - 1;
+    firstflat = W_GetNumForName(DEH_String("F_START")) + 1;
+    lastflat = W_GetNumForName(DEH_String("F_END")) - 1;
     numflats = lastflat - firstflat + 1;
 	
     // Create translation table for global animation.
-    flattranslation = Z_Malloc ((numflats+1)*sizeof(*flattranslation), PU_STATIC, 0);
+    flattranslation = Z_Malloc((numflats + 1) * sizeof(*flattranslation), PU_STATIC, 0);
     
-    for (i=0 ; i<numflats ; i++)
-	flattranslation[i] = i;
+    for (i = 0; i < numflats; i++)
+	    flattranslation[i] = i;
 }
 
 
