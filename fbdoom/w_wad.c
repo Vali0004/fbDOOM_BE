@@ -217,7 +217,7 @@ wad_file_t *W_AddFile(char *filename)
     {
 		lump_p->wad_file = wad_file;
 		lump_p->position = filerover->filepos;
-		lump_p->size = filerover->size;
+		lump_p->size = LONG(filerover->size);
 		lump_p->cache = NULL;
 		strncpy(lump_p->name, filerover->name, 8);
 

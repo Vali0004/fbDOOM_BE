@@ -664,13 +664,13 @@ void R_InitSpriteLumps (void)
 	
     for (i=0 ; i< numspritelumps ; i++)
     {
-	if (!(i&63))
-	    printf (".");
+        if (!(i&63))
+            printf (".");
 
-	patch = W_CacheLumpNum (firstspritelump+i, PU_CACHE);
-	spritewidth[i] = SHORT(patch->width)<<FRACBITS;
-	spriteoffset[i] = SHORT(patch->leftoffset)<<FRACBITS;
-	spritetopoffset[i] = SHORT(patch->topoffset)<<FRACBITS;
+        patch = W_CacheLumpNum (firstspritelump+i, PU_CACHE);
+        spritewidth[i] = SHORT(patch->width)<<FRACBITS;
+        spriteoffset[i] = SHORT(patch->leftoffset)<<FRACBITS;
+        spritetopoffset[i] = SHORT(patch->topoffset)<<FRACBITS;
     }
 }
 
