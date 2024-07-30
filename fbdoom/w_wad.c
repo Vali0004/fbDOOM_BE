@@ -93,7 +93,7 @@ static void ExtendLumpInfo(int newnumlumps)
 
     if (newlumpinfo == NULL)
     {
-	I_Error ("Couldn't realloc lumpinfo");
+	    I_Error("Couldn't realloc lumpinfo");
     }
 
     // Copy over lumpinfo_t structures from the old array. If any of
@@ -136,7 +136,7 @@ static void ExtendLumpInfo(int newnumlumps)
 // Other files are single lumps with the base filename
 //  for the lump name.
 
-wad_file_t *W_AddFile (char *filename)
+wad_file_t *W_AddFile(char *filename)
 {
     wadinfo_t header;
     lumpinfo_t *lump_p;
@@ -170,8 +170,8 @@ wad_file_t *W_AddFile (char *filename)
         // here, as it would appear on disk.
 
 		fileinfo = Z_Malloc(sizeof(filelump_t), PU_STATIC, 0);
-		fileinfo->filepos = LONG(0);
-		fileinfo->size = LONG(wad_file->length);
+		fileinfo->filepos = 0;
+		fileinfo->size = wad_file->length;
 
         // Name the lump after the base of the filename (without the
         // extension).
@@ -216,13 +216,13 @@ wad_file_t *W_AddFile (char *filename)
     for (i=startlump; i<numlumps; ++i)
     {
 		lump_p->wad_file = wad_file;
-		lump_p->position = LONG(filerover->filepos);
-		lump_p->size = LONG(filerover->size);
-			lump_p->cache = NULL;
+		lump_p->position = filerover->filepos;
+		lump_p->size = filerover->size;
+		lump_p->cache = NULL;
 		strncpy(lump_p->name, filerover->name, 8);
 
-			++lump_p;
-			++filerover;
+		++lump_p;
+		++filerover;
     }
 
     Z_Free(fileinfo);
@@ -322,11 +322,11 @@ int W_GetNumForName (char* name)
 // W_LumpLength
 // Returns the buffer size needed to load the given lump.
 //
-int W_LumpLength (unsigned int lump)
+int W_LumpLength(unsigned int lump)
 {
     if (lump >= numlumps)
     {
-	I_Error ("W_LumpLength: %i >= numlumps", lump);
+	    I_Error("W_LumpLength: %i >= numlumps", lump);
     }
 
     return lumpinfo[lump].size;
@@ -346,22 +346,22 @@ void W_ReadLump(unsigned int lump, void *dest)
 	
     if (lump >= numlumps)
     {
-	I_Error ("W_ReadLump: %i >= numlumps", lump);
+	    I_Error("W_ReadLump: %i >= numlumps", lump);
     }
 
     l = lumpinfo+lump;
 	
-    I_BeginRead ();
+    I_BeginRead();
 	
     c = W_Read(l->wad_file, l->position, dest, l->size);
 
     if (c < l->size)
     {
-	I_Error ("W_ReadLump: only read %i of %i on lump %i",
-		 c, l->size, lump);	
+	    I_Error("W_ReadLump: only read %i of %i on lump %i",
+	    	 c, l->size, lump);	
     }
 
-    I_EndRead ();
+    I_EndRead();
 }
 
 
@@ -386,7 +386,7 @@ void *W_CacheLumpNum(int lumpnum, int tag)
 
     if ((unsigned)lumpnum >= numlumps)
     {
-	I_Error ("W_CacheLumpNum: %i >= numlumps", lumpnum);
+	    I_Error("W_CacheLumpNum: %i >= numlumps", lumpnum);
     }
 
     lump = &lumpinfo[lumpnum];
@@ -414,7 +414,7 @@ void *W_CacheLumpNum(int lumpnum, int tag)
         // Not yet loaded, so load it now
 
         lump->cache = Z_Malloc(W_LumpLength(lumpnum), tag, &lump->cache);
-	W_ReadLump (lumpnum, lump->cache);
+	    W_ReadLump(lumpnum, lump->cache);
         result = lump->cache;
     }
 	
@@ -447,7 +447,7 @@ void W_ReleaseLumpNum(int lumpnum)
 
     if ((unsigned)lumpnum >= numlumps)
     {
-	I_Error ("W_ReleaseLumpNum: %i >= numlumps", lumpnum);
+	    I_Error("W_ReleaseLumpNum: %i >= numlumps", lumpnum);
     }
 
     lump = &lumpinfo[lumpnum];
