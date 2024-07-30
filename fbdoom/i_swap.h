@@ -44,10 +44,32 @@
 
 #else
 	
-#define SHORT(x)  ((signed short) (x))
-#define LONG(x)   ((signed int) (x))
+#ifndef __BIG_ENDIAN__
 
-#define SYS_LITTLE_ENDIAN
+#define LONG(x) (x)
+#define SHORT(x) (x)
+
+#else
+
+#define LONG(x) ((long)SwapLONG((unsigned long) (x)))
+#define SHORT(x) ((short)SwapSHORT((unsigned short) (x)))
+
+static unsigned long SwapLONG(unsigned long x)
+{
+    return
+	(x>>24)
+	| ((x>>8) & 0xff00)
+	| ((x<<8) & 0xff0000)
+	| (x<<24);
+}
+
+static unsigned short SwapSHORT(unsigned short x)
+{
+    return
+	(x>>8) | (x<<8);
+}
+
+#endif
 
 #endif
 #endif
