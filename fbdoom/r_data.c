@@ -501,14 +501,14 @@ void R_InitTextures (void)
     // The data is contained in one or two lumps,
     //  TEXTURE1 for shareware, plus TEXTURE2 for commercial.
     maptex = maptex1 = W_CacheLumpName(DEH_String("TEXTURE1"), PU_STATIC);
-    numtextures1 = *maptex;
+    numtextures1 = LONG(*maptex);
     maxoff = W_LumpLength(W_GetNumForName(DEH_String("TEXTURE1")));
     directory = maptex+1;
 	
     if (W_CheckNumForName(DEH_String("TEXTURE2")) != -1)
     {
         maptex2 = W_CacheLumpName(DEH_String("TEXTURE2"), PU_STATIC);
-        numtextures2 = *maptex2;
+        numtextures2 = LONG(*maptex2);
         maxoff2 = W_LumpLength(W_GetNumForName(DEH_String("TEXTURE2")));
     }
     else

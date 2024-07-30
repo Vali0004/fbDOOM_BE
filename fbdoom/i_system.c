@@ -216,7 +216,7 @@ boolean I_ConsoleStdout(void)
 #if ORIGCODE
     return isatty(fileno(stdout));
 #else
-	return 0;
+	return 1;
 #endif
 #endif
 }
