@@ -486,7 +486,7 @@ void R_InitTextures (void)
     // Load the patch names from pnames.lmp.
     name[8] = 0;
     names = W_CacheLumpName(DEH_String("PNAMES"), PU_STATIC);
-    nummappatches = *((int *)names);
+    nummappatches = LONG(*((int *)names));
     name_p = names + 4;
     patchlookup = Z_Malloc(nummappatches * sizeof(*patchlookup), PU_STATIC, NULL);
 
