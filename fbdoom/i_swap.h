@@ -43,7 +43,7 @@
 #endif
 
 #else
-#include <byteswap.h>
+
 #ifndef __BIG_ENDIAN__
 
 #define LONG(x) (x)
@@ -51,11 +51,14 @@
 
 #else
 
-#define LONG bswap_32
-#define SHORT bswap_16
+#include <byteswap.h>
+
+#define LONG(x) ((int32_t)bswap_32(x))
+#define SHORT(x) ((int16_t)bswap_16(x))
 
 #endif
 
 #endif
 #endif
+
 

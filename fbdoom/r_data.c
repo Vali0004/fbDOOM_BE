@@ -488,6 +488,7 @@ void R_InitTextures (void)
     names = W_CacheLumpName(DEH_String("PNAMES"), PU_STATIC);
     nummappatches = LONG(*((int *)names));
     name_p = names + 4;
+    printf("allocating room for 0x%x patches\n", nummappatches);
     patchlookup = Z_Malloc(nummappatches * sizeof(*patchlookup), PU_STATIC, NULL);
 
     for (i = 0; i < nummappatches; i++)
@@ -508,7 +509,7 @@ void R_InitTextures (void)
     if (W_CheckNumForName(DEH_String("TEXTURE2")) != -1)
     {
         maptex2 = W_CacheLumpName(DEH_String("TEXTURE2"), PU_STATIC);
-        numtextures2 = LONG(*maptex2);
+        numtextures2 = *maptex2;
         maxoff2 = W_LumpLength(W_GetNumForName(DEH_String("TEXTURE2")));
     }
     else
@@ -518,7 +519,8 @@ void R_InitTextures (void)
         maxoff2 = 0;
     }
     numtextures = numtextures1 + numtextures2;
-	
+    printf("numtextures 0x%x = 0x%x + 0x%x\n", numtextures, numtextures1, numtextures2);
+
     textures = Z_Malloc(numtextures * sizeof(*textures), PU_STATIC, 0);
     texturecolumnlump = Z_Malloc(numtextures * sizeof(*texturecolumnlump), PU_STATIC, 0);
     texturecolumnofs = Z_Malloc(numtextures * sizeof(*texturecolumnofs), PU_STATIC, 0);
@@ -547,9 +549,10 @@ void R_InitTextures (void)
         for (i = 0; i < temp3 + 10; i++)
             printf("\b");
     }
-	
+
     for (i = 0; i < numtextures; i++, directory++)
     {
+        printf("loading %d\n", i);
         if (!(i & 63))
             printf (".");
 
@@ -560,16 +563,16 @@ void R_InitTextures (void)
             maxoff = maxoff2;
             directory = maptex+1;
         }
-            
-        offset = *directory;
+
+        offset = LONG(*directory);
 
         if (offset > maxoff)
             I_Error("R_InitTextures: bad texture directory");
-        
+
         mtexture = (maptexture_t *)((byte *)maptex + offset);
 
         texture = textures[i] = Z_Malloc(sizeof(texture_t) + sizeof(texpatch_t) * (SHORT(mtexture->patchcount)-1), PU_STATIC, 0);
-        
+
         texture->width = SHORT(mtexture->width);
         texture->height = SHORT(mtexture->height);
         texture->patchcount = SHORT(mtexture->patchcount);
@@ -664,13 +667,13 @@ void R_InitSpriteLumps (void)
 	
     for (i=0 ; i< numspritelumps ; i++)
     {
-        if (!(i&63))
-            printf (".");
+	if (!(i&63))
+	    printf (".");
 
-        patch = W_CacheLumpNum (firstspritelump+i, PU_CACHE);
-        spritewidth[i] = SHORT(patch->width)<<FRACBITS;
-        spriteoffset[i] = SHORT(patch->leftoffset)<<FRACBITS;
-        spritetopoffset[i] = SHORT(patch->topoffset)<<FRACBITS;
+	patch = W_CacheLumpNum (firstspritelump+i, PU_CACHE);
+	spritewidth[i] = SHORT(patch->width)<<FRACBITS;
+	spriteoffset[i] = SHORT(patch->leftoffset)<<FRACBITS;
+	spritetopoffset[i] = SHORT(patch->topoffset)<<FRACBITS;
     }
 }
 
@@ -903,6 +906,7 @@ void R_PrecacheLevel (void)
 
     Z_Free(spritepresent);
 }
+
 
 
 

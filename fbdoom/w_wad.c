@@ -197,10 +197,13 @@ wad_file_t *W_AddFile(char *filename)
 		}
 
 		header.numlumps = LONG(header.numlumps);
+                printf("before swap 0x%x\n", header.infotableofs);
 		header.infotableofs = LONG(header.infotableofs);
+                printf("after swap 0x%x\n", header.infotableofs);
 		length = header.numlumps*sizeof(filelump_t);
 		fileinfo = Z_Malloc(length, PU_STATIC, 0);
 
+        printf("loading %d lumps from offset %d\n", header.numlumps, header.infotableofs);
         W_Read(wad_file, header.infotableofs, fileinfo, length);
         newnumlumps += header.numlumps;
     }
@@ -272,6 +275,7 @@ int W_CheckNumForName (char* name)
         {
             if (!strncasecmp(lump_p->name, name, 8))
             {
+                //printf("W_CheckNumForName(%s) == %d\n", name, lump_p - lumpinfo);
                 return lump_p - lumpinfo;
             }
         }
@@ -284,6 +288,7 @@ int W_CheckNumForName (char* name)
 
         for (i=numlumps-1; i >= 0; --i)
         {
+            printf("lump %d %s\n", i, lumpinfo[i].name);
             if (!strncasecmp(lumpinfo[i].name, name, 8))
             {
                 return i;
@@ -343,22 +348,22 @@ void W_ReadLump(unsigned int lump, void *dest)
 {
     int c;
     lumpinfo_t *l;
-	
+
     if (lump >= numlumps)
     {
 	    I_Error("W_ReadLump: %i >= numlumps", lump);
     }
 
     l = lumpinfo+lump;
-	
+
     I_BeginRead();
-	
+    //printf("doing read off 0x%x, size 0x%x\n", l->position, l->size);
     c = W_Read(l->wad_file, l->position, dest, l->size);
 
     if (c < l->size)
     {
 	    I_Error("W_ReadLump: only read %i of %i on lump %i",
-	    	 c, l->size, lump);	
+	    	 c, l->size, lump);
     }
 
     I_EndRead();
@@ -412,12 +417,13 @@ void *W_CacheLumpNum(int lumpnum, int tag)
     else
     {
         // Not yet loaded, so load it now
+        //printf("loading lump %d of size 0x%x\n", lumpnum, W_LumpLength(lumpnum));
 
         lump->cache = Z_Malloc(W_LumpLength(lumpnum), tag, &lump->cache);
 	    W_ReadLump(lumpnum, lump->cache);
         result = lump->cache;
     }
-	
+
     return result;
 }
 
@@ -428,6 +434,7 @@ void *W_CacheLumpNum(int lumpnum, int tag)
 //
 void *W_CacheLumpName(char *name, int tag)
 {
+    //printf("W_CacheLumpName(%s, %d)\n", name, tag);
     return W_CacheLumpNum(W_GetNumForName(name), tag);
 }
 

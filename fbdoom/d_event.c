@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include "d_event.h"
+#include <stdio.h>
 
 #define MAXEVENTS 64
 
@@ -34,7 +35,19 @@ static int eventtail;
 //
 void D_PostEvent (event_t* ev)
 {
+    int used = eventhead - eventtail;
+    if (used < 0) used += MAXEVENTS;
+
+    if (used > (MAXEVENTS/2)) {
+      if (ev->type == ev_mouse) {
+        puts("mouse drop");
+        return;
+      }
+      fprintf(stderr, "half %d\n", ev->type);
+    }
+
     events[eventhead] = *ev;
+    //printf("push %d %d\n", eventhead, used);
     eventhead = (eventhead + 1) % MAXEVENTS;
 }
 
@@ -50,8 +63,9 @@ event_t *D_PopEvent(void)
     {
         return NULL;
     }
-    
+
     result = &events[eventtail];
+    //printf("pop %d\n", eventtail);
 
     // Advance to the next event in the queue.
 

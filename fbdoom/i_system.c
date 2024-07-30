@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include <stdarg.h>
+#include <assert.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -209,6 +210,7 @@ void I_PrintStartupBanner(char *gamedescription)
 
 boolean I_ConsoleStdout(void)
 {
+return 1;
 #ifdef _WIN32
     // SDL "helpfully" always redirects stdout to a file.
     return 0;
@@ -216,7 +218,7 @@ boolean I_ConsoleStdout(void)
 #if ORIGCODE
     return isatty(fileno(stdout));
 #else
-	return 1;
+	return 0;
 #endif
 #endif
 }
@@ -377,11 +379,12 @@ void I_Error (char *error, ...)
 
     // Message first.
     va_start(argptr, error);
-    //fprintf(stderr, "\nError: ");
+    fprintf(stderr, "\nError: ");
     vfprintf(stderr, error, argptr);
     fprintf(stderr, "\n\n");
     va_end(argptr);
     fflush(stderr);
+assert(0);
 
     // Write a copy of the message into buffer.
     va_start(argptr, error);

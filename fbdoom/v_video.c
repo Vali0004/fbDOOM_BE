@@ -145,9 +145,14 @@ void V_DrawPatch(int x, int y, patch_t *patch)
     byte *dest;
     byte *source;
     int w;
+    //printf("V_DrawPatch(%d, %d, 0x%x)\n", x, y, patch);
+
+    //printf("leftoffset 0x%x -> 0x%x\n", patch->leftoffset, SHORT(patch->leftoffset));
 
     y -= SHORT(patch->topoffset);
     x -= SHORT(patch->leftoffset);
+
+    //printf("x %d, y %d\n", x, y);
 
     // haleyjd 08/28/10: Strife needs silent error checking here.
     if(patchclip_callback)
@@ -162,7 +167,7 @@ void V_DrawPatch(int x, int y, patch_t *patch)
      || y < 0
      || y + SHORT(patch->height) > SCREENHEIGHT)
     {
-        I_Error("Bad V_DrawPatch x=%i y=%i patch.width=%i patch.height=%i topoffset=%i leftoffset=%i", x, y, patch->width, patch->height, patch->topoffset, patch->leftoffset);
+        I_Error("Bad V_DrawPatch x=%i y=%i patch.width=%i patch.height=%i topoffset=%i leftoffset=%i", x, y, SHORT(patch->width), SHORT(patch->height), SHORT(patch->topoffset), SHORT(patch->leftoffset));
     }
 #endif
 

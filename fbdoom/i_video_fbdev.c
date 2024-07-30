@@ -47,6 +47,7 @@ rcsid[] = "$Id: i_x.c,v 1.6 1997/02/03 22:45:10 b1 Exp $";
 #include <sys/socket.h>
 #include <linux/fb.h>
 #include <sys/ioctl.h>
+#include <assert.h>
 
 //#define CMAP256
 
@@ -62,6 +63,8 @@ struct color {
 };
 
 static struct color colors[256];
+
+static uint32_t translated_colormap[256];
 
 // The screen buffer; this is modified to draw things to the screen
 
@@ -136,23 +139,33 @@ void cmap_to_fb(uint8_t * out, uint8_t * in, int in_pixels)
     int i, j, k;
     struct color c;
     uint32_t pix;
-    uint16_t r, g, b;
+    uint16_t r, g, b, a;
+    uint32_t *out32 = out;
 
     for (i = 0; i < in_pixels; i++)
     {
+#if 0
         c = colors[*in];  /* R:8 G:8 B:8 format! */
         r = (uint16_t)(c.r >> (8 - fb.red.length));
         g = (uint16_t)(c.g >> (8 - fb.green.length));
         b = (uint16_t)(c.b >> (8 - fb.blue.length));
+        a = (uint16_t)(0x0 >> (8 - fb.transp.length));
         pix = r << fb.red.offset;
         pix |= g << fb.green.offset;
         pix |= b << fb.blue.offset;
+        pix |= a << fb.transp.offset;
+        //printf("0x%08x %02x\n", pix, a);
+#else
+        pix = translated_colormap[*in];
+#endif
 
         for (k = 0; k < fb_scaling; k++) {
-            for (j = 0; j < fb.bits_per_pixel/8; j++) {
-                *out = (pix >> (j*8));
-                out++;
-            }
+          *out32 = pix;
+          out32++;
+            //for (j = 0; j < fb.bits_per_pixel/8; j++) {
+            //    *out = (pix >> (j*8));
+            //    out++;
+            //}
         }
         in++;
     }
@@ -172,6 +185,10 @@ void I_InitGraphics (void)
 
     /* fetch framebuffer info */
     ioctl(fd_fb, FBIOGET_VSCREENINFO, &fb);
+  //fb.red.offset = 24;
+  //fb.green.offset = 16;
+  //fb.blue.offset = 8;
+  //fb.transp.offset = 0;
     /* change params if needed */
     //ioctl(fd_fb, FBIOPUT_VSCREENINFO, &fb);
     printf("I_InitGraphics: framebuffer: x_res: %d, y_res: %d, x_virtual: %d, y_virtual: %d, bpp: %d, grayscale: %d\n",
@@ -181,6 +198,7 @@ void I_InitGraphics (void)
             fb.red.length, fb.green.length, fb.blue.length, fb.transp.length, fb.red.offset, fb.green.offset, fb.blue.offset, fb.transp.offset);
 
     printf("I_InitGraphics: DOOM screen size: w x h: %d x %d\n", SCREENWIDTH, SCREENHEIGHT);
+    assert(fb.bits_per_pixel == 32);
 
 
     i = M_CheckParmWithArgs("-scaling", 1);
@@ -192,6 +210,9 @@ void I_InitGraphics (void)
         fb_scaling = fb.xres / SCREENWIDTH;
         if (fb.yres / SCREENHEIGHT < fb_scaling)
             fb_scaling = fb.yres / SCREENHEIGHT;
+
+        if (fb_scaling <= 0) fb_scaling = 1;
+
         printf("I_InitGraphics: Auto-scaling factor: %d\n", fb_scaling);
     }
 
@@ -396,6 +417,38 @@ void I_UpdateNoBlit (void)
 {
 }
 
+static uint64_t GetTimeMicroseconds(void) {
+  struct timeval tv;
+  gettimeofday( &tv, 0 );
+  return tv.tv_usec + ((uint64_t)(tv.tv_sec)) * 1000000LL;
+}
+
+void updateMetrics(uint32_t scaleconvert, uint32_t tofb) {
+  static int frames = 0;
+  static uint32_t scaletime = 0;
+  static uint32_t fbtime = 0;
+  static uint64_t start = 0;
+
+  if (start == 0) start = GetTimeMicroseconds();
+
+  frames += 1;
+  scaletime += scaleconvert;
+  fbtime += tofb;
+
+  if (frames >= 60) {
+    uint64_t end = GetTimeMicroseconds();
+    float time = (float)end - (float)start;
+    time = time / (1000 * 1000);
+    float fps = frames / time;
+
+    //printf("%d %d fps:%d\n", scaletime/frames, fbtime/frames, (uint32_t)fps);
+    frames = 0;
+    scaletime = 0;
+    fbtime = 0;
+    start = GetTimeMicroseconds();
+  }
+}
+
 //
 // I_FinishUpdate
 //
@@ -405,15 +458,23 @@ void I_FinishUpdate (void)
     int y;
     int x_offset, y_offset, x_offset_end;
     unsigned char *line_in, *line_out;
+    uint64_t start = GetTimeMicroseconds();
 
     /* Offsets in case FB is bigger than DOOM */
     /* 600 = fb heigt, 200 screenheight */
     /* 600 = fb heigt, 200 screenheight */
     /* 2048 =fb width, 320 screenwidth */
     y_offset     = (((fb.yres - (SCREENHEIGHT * fb_scaling)) * fb.bits_per_pixel/8)) / 2;
-    x_offset     = (((fb.xres - (SCREENWIDTH  * fb_scaling)) * fb.bits_per_pixel/8)) / 2; // XXX: siglent FB hack: /4 instead of /2, since it seems to handle the resolution in a funny way
-    //x_offset     = 0;
-    x_offset_end = ((fb.xres - (SCREENWIDTH  * fb_scaling)) * fb.bits_per_pixel/8) - x_offset;
+    int w;
+    if ((SCREENWIDTH  * fb_scaling) <= fb.xres) {
+      x_offset     = (((fb.xres - (SCREENWIDTH  * fb_scaling)) * fb.bits_per_pixel/8)) / 2;
+      x_offset_end = ((fb.xres - (SCREENWIDTH  * fb_scaling)) * fb.bits_per_pixel/8) - x_offset;
+      w = SCREENWIDTH;
+    } else {
+      x_offset     = 0;
+      x_offset_end = 0;
+      w = fb.xres;
+    }
 
     /* DRAW SCREEN */
     line_in  = (unsigned char *) I_VideoBuffer;
@@ -421,8 +482,7 @@ void I_FinishUpdate (void)
 
     y = SCREENHEIGHT;
 
-    while (y--)
-    {
+    while (y--) {
         int i;
         for (i = 0; i < fb_scaling; i++) {
             line_out += x_offset;
@@ -434,16 +494,20 @@ void I_FinishUpdate (void)
             }
 #else
             //cmap_to_rgb565((void*)line_out, (void*)line_in, SCREENWIDTH);
-            cmap_to_fb((void*)line_out, (void*)line_in, SCREENWIDTH);
+            cmap_to_fb((void*)line_out, (void*)line_in, w);
 #endif
-            line_out += (SCREENWIDTH * fb_scaling * (fb.bits_per_pixel/8)) + x_offset_end;
+            line_out += (w * fb_scaling * (fb.bits_per_pixel/8)) + x_offset_end;
         }
         line_in += SCREENWIDTH;
     }
+    uint64_t middle = GetTimeMicroseconds();
 
     /* Start drawing from y-offset */
     lseek(fd_fb, y_offset * fb.xres, SEEK_SET);
     write(fd_fb, I_VideoBuffer_FB, (SCREENHEIGHT * fb_scaling * (fb.bits_per_pixel/8)) * fb.xres); /* draw only portion used by doom + x-offsets */
+    uint64_t end = GetTimeMicroseconds();
+
+    updateMetrics((uint32_t)(middle-start), (uint32_t)(end-middle));
 }
 
 //
@@ -462,12 +526,11 @@ void I_ReadScreen (byte* scr)
 #define GFX_RGB565_G(color)			((0x07E0 & color) >> 5)
 #define GFX_RGB565_B(color)			(0x001F & color)
 
-void I_SetPalette (byte* palette)
-{
-	int i;
-	//col_t* c;
+void I_SetPalette (byte* palette) {
+  int i;
+  //col_t* c;
 
-	//for (i = 0; i < 256; i++)
+  //for (i = 0; i < 256; i++)
 	//{
 	//	c = (col_t*)palette;
 
@@ -477,20 +540,35 @@ void I_SetPalette (byte* palette)
 
 	//	palette += 3;
 	//}
-    
 
-    /* performance boost:
-     * map to the right pixel format over here! */
 
-    for (i=0; i<256; ++i ) {
-        colors[i].a = 0;
-        colors[i].r = gammatable[usegamma][*palette++];
-        colors[i].g = gammatable[usegamma][*palette++];
-        colors[i].b = gammatable[usegamma][*palette++];
-    }
+  /* performance boost:
+   * map to the right pixel format over here! */
 
-    /* Set new color map in kernel framebuffer driver */
-    //XXX FIXME ioctl(fd_fb, IOCTL_FB_PUTCMAP, colors);
+  uint8_t a,r,g,b;
+  uint32_t pix;
+
+  for (i=0; i<256; ++i ) {
+    colors[i].a = 0;
+    colors[i].r = gammatable[usegamma][*palette++];
+    colors[i].g = gammatable[usegamma][*palette++];
+    colors[i].b = gammatable[usegamma][*palette++];
+
+    a = 0xff >> (8 - fb.transp.length);
+    r = colors[i].r >> (8 - fb.red.length);
+    g = colors[i].g >> (8 - fb.green.length);
+    b = colors[i].b >> (8 - fb.blue.length);
+
+    pix = a << fb.transp.offset;
+    pix |= r << fb.red.offset;
+    pix |= g << fb.green.offset;
+    pix |= b << fb.blue.offset;
+
+    translated_colormap[i] = pix;
+  }
+
+  /* Set new color map in kernel framebuffer driver */
+  //XXX FIXME ioctl(fd_fb, IOCTL_FB_PUTCMAP, colors);
 }
 
 // Given an RGB value, find the closest matching palette index.
